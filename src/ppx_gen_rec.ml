@@ -44,8 +44,8 @@ and module_binding_of_declaration { pmd_name; pmd_type; pmd_attributes; pmd_loc;
   }
 
 and structure_item_desc_of_signature_item_desc = function
-  | Psig_value _value_description ->
-      raise_errorf "ppx_gen_rec: Psig_value not supported yet"
+  | Psig_value value_description ->
+      Pstr_primitive value_description
   | Psig_type (rec_flag, decls) ->
       Pstr_type (rec_flag, decls)
   | Psig_typext type_extension ->
