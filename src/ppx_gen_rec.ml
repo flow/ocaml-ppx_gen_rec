@@ -118,5 +118,5 @@ let structure_item mapper = function
 let gen_rec_mapper = { default_mapper with structure_item }
 
 let () =
-  Driver.register ~name:"ppx_gen_rec" Versions.ocaml_405
+  Driver.register ~name:"ppx_gen_rec" ~position:~-10 Versions.ocaml_405
     (fun _config _cookies -> gen_rec_mapper)
