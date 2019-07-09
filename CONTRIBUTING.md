@@ -36,13 +36,14 @@ licensed under the LICENSE file in the root directory of this source tree.
 
 ## Release Process
 
-1. Install `topkg-care`: `opam install topkg-care topkg-jbuilder`
-2. Review the changes since last version: `topkg status`
-3. Write the release notes: `topkg log edit`
-4. Commit the release notes: `topkg log commit`
-5. Run some sanity checks: `topkg lint`
-6. Tag the distribution with a version: `topkg tag`
-7. Create the distribution archive: `topkg distrib`
-8. Upload the archive to GitHub: `topkg publish distrib`
-9. Create an opam package: `topkg opam pkg`
-10. Submit it to OCaml's opam repository: `topkg opam submit`
+1. Install `dune-release`: `opam install dune-release`
+2. Update `CHANGES.md`, being careful to follow the existing format
+3. Commit `CHANGES.md`
+4. Run some sanity checks: `dune-release lint`
+5. Tag the distribution with a version: `dune-release tag`
+6. Create the distribution archive: `dune-release distrib`
+7. Upload the archive to GitHub: `dune-release publish distrib`
+8. Create an opam package: `dune-release opam pkg`
+9. Submit it to OCaml's opam repository: `dune-release opam submit`
+
+For more details, see `dune-release help release`.
