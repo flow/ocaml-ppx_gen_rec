@@ -4,11 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
-
-open Migrate_parsetree
-open OCaml_405.Ast
-open Parsetree
-open Ast_mapper
+ 
+open Ppxlib
 
 let raise_errorf = Location.raise_errorf
 
@@ -17,8 +14,8 @@ let rec module_expr_desc_of_type_desc = function
       Pmod_ident ident
   | Pmty_signature items ->
       Pmod_structure (structure_of_signature items)
-  | Pmty_functor (loc, a, b) ->
-      Pmod_functor (loc, a, module_expr_of_type b)
+  | Pmty_functor (a, b) ->
+      Pmod_functor (a, module_expr_of_type b)
   | Pmty_with (_module_type, _with_constraints) ->
       raise_errorf "ppx_gen_rec: Pmty_with not supported yet"
   | Pmty_typeof _module_expr ->
@@ -43,6 +40,15 @@ and module_binding_of_declaration { pmd_name; pmd_type; pmd_attributes; pmd_loc;
     pmb_loc = pmd_loc;
   }
 
+and open_declaration_of_open_description desc =
+    let ident_loc = desc.popen_expr in
+    let module_expr = {
+      pmod_attributes=[];
+      pmod_loc=ident_loc.loc;
+      pmod_desc=Pmod_ident ident_loc
+    } in
+    { desc with popen_expr = module_expr }
+  
 and structure_item_desc_of_signature_item_desc = function
   | Psig_value _value_description ->
       raise_errorf "ppx_gen_rec: Psig_value not supported yet"
@@ -59,7 +65,7 @@ and structure_item_desc_of_signature_item_desc = function
   | Psig_modtype module_type_declaration ->
       Pstr_modtype module_type_declaration
   | Psig_open desc ->
-      Pstr_open desc
+      Pstr_open (open_declaration_of_open_description desc)
   | Psig_include _include_description ->
       raise_errorf "ppx_gen_rec: Psig_include not supported yet"
   | Psig_class _class_descriptions ->
@@ -70,6 +76,10 @@ and structure_item_desc_of_signature_item_desc = function
       Pstr_attribute attr
   | Psig_extension (ext, attrs) ->
       Pstr_extension (ext, attrs)
+  | Psig_typesubst _ -> 
+      raise_errorf "ppx_gen_rec: Psig_typesubst not supported yet"
+  | Psig_modsubst _ ->
+      raise_errorf  "ppx_gen_rec: Psig_modsubst not supported yet"
 
 and structure_item_of_signature_item { psig_desc; psig_loc; } =
   {
@@ -80,7 +90,11 @@ and structure_item_of_signature_item { psig_desc; psig_loc; } =
 and structure_of_signature signature_items =
   List.map structure_item_of_signature_item signature_items
 
-let module_binding mapper = function
+let mapper =
+    object
+  inherit Ast_traverse.map as super
+  
+  method! module_binding = function
   | { pmb_name = {txt = name; _};
       pmb_expr = ({
         pmod_desc = Pmod_constraint (
@@ -90,7 +104,7 @@ let module_binding mapper = function
         _
       } as expr);
       _
-    } as binding when name = ident ->
+    } as binding when name = Some ident ->
     { binding with pmb_expr = { expr with
       pmod_desc = Pmod_constraint (
         { m with pmod_desc = Pmod_structure (structure_of_signature signature_items) },
@@ -99,24 +113,26 @@ let module_binding mapper = function
     } }
 
   | other ->
-    default_mapper.module_binding mapper other
-
-let gen_rec_mapper = { default_mapper with module_binding }
-
-let structure_item mapper = function
-  | { pstr_desc = Pstr_extension (({txt = "gen"; _}, PStr [{
-        pstr_desc = Pstr_recmodule decls;
-        pstr_loc;
-      }]), _);
-      pstr_loc = _;
-    } ->
-    let decls = List.map (gen_rec_mapper.module_binding gen_rec_mapper) decls in
-    { pstr_desc = Pstr_recmodule decls; pstr_loc }
-  | other ->
-    default_mapper.structure_item mapper other
-
-let gen_rec_mapper = { default_mapper with structure_item }
+    super # module_binding other
+end   
+  
+let expand_struct_item = function
+  | PStr [{
+    pstr_desc = Pstr_recmodule decls;
+    pstr_loc;
+  }] -> let decls = List.map (mapper # module_binding) decls in
+  { pstr_desc = Pstr_recmodule decls; pstr_loc }
+  | _ -> failwith "%gen can only be used with rec modules"
+  
+  
+let extensions = [
+  Extension.declare
+  "gen"
+  Extension.Context.structure_item
+  Ast_pattern.__ 
+  (fun ~loc:_ ~path:_ x -> expand_struct_item x)
+]
 
 let () =
-  Driver.register ~name:"ppx_gen_rec" ~position:~-10 Versions.ocaml_405
-    (fun _config _cookies -> gen_rec_mapper)
+  Driver.register_transformation "ppx_gen_rec"
+    ~extensions
