@@ -1,0 +1,4 @@
+(library
+ (name foo)
+ (preprocess
+  (pps ppx_gen_rec)))
