@@ -50,8 +50,8 @@ and open_declaration_of_open_description desc =
     { desc with popen_expr = module_expr }
   
 and structure_item_desc_of_signature_item_desc = function
-  | Psig_value _value_description ->
-      raise_errorf "ppx_gen_rec: Psig_value not supported yet"
+  | Psig_value {pval_loc; _} ->
+      raise_errorf ~loc:pval_loc "ppx_gen_rec: Psig_value not supported yet"
   | Psig_type (rec_flag, decls) ->
       Pstr_type (rec_flag, decls)
   | Psig_typext type_extension ->
