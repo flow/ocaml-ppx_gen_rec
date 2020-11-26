@@ -1,4 +1,14 @@
-(library
+(executable
  (name foo)
  (preprocess
-  (pps ppx_gen_rec)))
+  (pps ppx_gen_rec ppx_deriving.std)))
+
+(rule
+ (with-stdout-to
+  tests.output
+  (run ./foo.exe)))
+
+(rule
+ (alias runtest)
+ (action
+  (diff tests.expected tests.output)))
