@@ -24,6 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: avsm/setup-ocaml@v1
-      - run: opam install . -y --deps-only --with-tests
+      - run: opam install . -y --deps-only --with-test
       - name: Running tests
         run: dune test
