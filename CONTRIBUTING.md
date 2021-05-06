@@ -37,13 +37,15 @@ licensed under the LICENSE file in the root directory of this source tree.
 ## Release Process
 
 1. Install `dune-release`: `opam install dune-release`
-2. Update `CHANGES.md`, being careful to follow the existing format
-3. Commit `CHANGES.md`
-4. Run some sanity checks: `dune-release lint`
-5. Tag the distribution with a version: `dune-release tag`
-6. Create the distribution archive: `dune-release distrib`
-7. Upload the archive to GitHub: `dune-release publish distrib`
-8. Create an opam package: `dune-release opam pkg`
-9. Submit it to OCaml's opam repository: `dune-release opam submit`
+2. Install dependencies: `opam install --deps-only --with-test .`
+3. Update `CHANGES.md`, being careful to follow the existing format
+4. Commit `CHANGES.md` and `git push`
+5. Run some sanity checks: `dune-release lint`
+6. Run the tests: `opam exec dune test`
+7. Tag the distribution with a version: `dune-release tag`
+8. Create the distribution archive: `dune-release distrib`
+9. Upload the archive to GitHub: `dune-release publish distrib`
+10. Create an opam package: `dune-release opam pkg`
+11. Submit it to OCaml's opam repository: `dune-release opam submit`
 
 For more details, see `dune-release help release`.
